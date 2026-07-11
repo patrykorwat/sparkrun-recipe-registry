@@ -1,8 +1,5 @@
-# Recipe: DeepSeek V4 Flash
-# DeepSeek V4 Flash with sparse MLA/DeepGEMM experimental SM120 support
-
 recipe_version: "2"
-name: patrykorwat/DeepSeek-V4-Flash
+name: DS-V4-Flash
 description: vLLM serving deepseek-ai/DeepSeek-V4-Flash on a DGX Spark cluster
 
 # HuggingFace model to download (optional, for --download-model)
