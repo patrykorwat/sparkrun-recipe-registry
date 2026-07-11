@@ -24,8 +24,8 @@ defaults:
   block_size: 256
   max_num_seqs: 4
   max_num_batched_tokens: 8192
-  speculative_config: {"method": "mtp", "num_speculative_tokens": 2}
-  reasoning_config: {"reasoning_parser":"deepseek_v4","reasoning_start_str":"","reasoning_end_str":""}
+  speculative_config: '{"method": "mtp", "num_speculative_tokens": 2}'
+  reasoning_config: '{"reasoning_parser":"deepseek_v4","reasoning_start_str":"","reasoning_end_str":""}'
 
 # Environment variables
 env:
