@@ -24,7 +24,8 @@ defaults:
   block_size: 256
   max_num_seqs: 4
   max_num_batched_tokens: 8192
-  num_speculative_tokens: 2
+  speculative_config: '{"method": "mtp", "num_speculative_tokens": 2}'
+  reasoning_config: '{"reasoning_parser":"deepseek_v4","reasoning_start_str":"","reasoning_end_str":""}'
 
 # Environment variables
 env:
@@ -51,7 +52,8 @@ command: |
       --tool-call-parser deepseek_v4 \
       --enable-auto-tool-choice \
       --reasoning-parser deepseek_v4 \
-      --reasoning-config '{{"reasoning_parser":"deepseek_v4","reasoning_start_str":"","reasoning_end_str":""}}' \
+      --reasoning-config {reasoning_config} \
+      --speculative-config {speculative_config} \
       --default-chat-template-kwargs.thinking=true \
       --default-chat-template-kwargs.reasoning_effort=high \
       --load-format instanttensor
