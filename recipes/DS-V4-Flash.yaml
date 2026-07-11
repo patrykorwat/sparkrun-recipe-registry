@@ -1,4 +1,4 @@
-recipe_version: "2"
+recipe_version: "3"
 name: DS-V4-Flash
 description: vLLM serving deepseek-ai/DeepSeek-V4-Flash on a DGX Spark cluster
 
