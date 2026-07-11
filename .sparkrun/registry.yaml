@@ -1,0 +1,4 @@
+registries:
+  - name: patrykorwat
+    description: Repository with mostly testing recipes.
+    recipes: recipes
