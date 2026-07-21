@@ -1,0 +1,42 @@
+recipe_version: '2'
+name: DS-V4-Flash-hybrid
+model: deepseek-ai/DeepSeek-V4-Flash-DSpark
+runtime: vllm
+min_nodes: 2
+container: aidendle94/sparkrun-vllm-ds4-gb10:production-3.7
+defaults:
+  tensor_parallel: 2
+  gpu_memory_utilization: 0.85
+  max_model_len: 393216
+  max_num_seqs: 128
+  max_num_batched_tokens: 4096
+  max_cudagraph_capture_size: 128        # ⭐ leave at 128
+  kv_cache_dtype: fp8
+  tokenizer_mode: deepseek_v4
+  tool_call_parser: deepseek_v4
+  reasoning_parser: deepseek_v4
+  speculative_config: '{"method":"dspark","num_speculative_tokens":3,"draft_sample_method":"probabilistic"}'
+  compilation_config: '{"cudagraph_mode":"FULL_AND_PIECEWISE","custom_ops":["all"]}'
+  gen_config: '{"temperature":0.4}'
+env:
+  VLLM_ENABLE_PCIE_ALLREDUCE: '0'
+  VLLM_PCIE_ALLREDUCE_BACKEND: 'cpp'
+  TRITON_CACHE_DIR: /cache/huggingface/jitcache/triton   # off root-owned /cache/jit; persistent
+  TORCH_EXTENSIONS_DIR: /cache/huggingface/jitcache/torch_extensions
+  VLLM_CACHE_DIR: /cache/huggingface/jitcache/vllm
+  FLASHINFER_WORKSPACE_BASE: /cache/huggingface/jitcache/flashinfer
+  TVM_FFI_CACHE_DIR: /cache/huggingface/jitcache/tvm-ffi
+  XDG_CACHE_HOME: /cache/huggingface/jitcache
+command: |
+  vllm serve {model} --host {host} --port {port} --trust-remote-code \
+    -tp {tensor_parallel} --kv-cache-dtype {kv_cache_dtype} --block-size 256 --load-format auto \
+    --gpu-memory-utilization {gpu_memory_utilization} --max-model-len {max_model_len} \
+    --max-num-seqs {max_num_seqs} --max-num-batched-tokens {max_num_batched_tokens} \
+    --max-cudagraph-capture-size {max_cudagraph_capture_size} \
+    --compilation-config '{compilation_config}' --async-scheduling --no-scheduler-reserve-full-isl \
+    --enable-chunked-prefill --enable-prefix-caching --enable-flashinfer-autotune \
+    --tokenizer-mode {tokenizer_mode} --tool-call-parser {tool_call_parser} --reasoning-parser {reasoning_parser} \
+    --enable-auto-tool-choice --override-generation-config '{gen_config}' \
+    --default-chat-template-kwargs.thinking=true --default-chat-template-kwargs.reasoning_effort=high \
+    --attention-backend FLASHINFER_MLA_SPARSE_DSV4 --moe-backend b12x --disable-custom-all-reduce \
+    --speculative-config '{speculative_config}'
