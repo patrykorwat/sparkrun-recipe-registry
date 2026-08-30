@@ -1,0 +1,57 @@
+recipe_version: "2"
+
+model: Qwen/Qwen3.8-Flash-Next-FP8
+
+runtime: vllm
+container: vllm/vllm-openai:qwen38-flash-next
+
+# The upstream image declares ENTRYPOINT ["vllm", "serve"]. Sparkrun appends
+# its distributed launcher command, so clear the image entrypoint first.
+executor_config:
+  entrypoint: ""
+
+# The FP8 checkpoint requires at least TP2. This recipe is sized for one GPU
+# from each of two DGX Sparks; pipeline parallelism is not supported by the
+# model's initial N-gram Embedding implementation.
+min_nodes: 2
+
+metadata:
+  description: "Qwen3.8-Flash-Next-FP8 on dual DGX Sparks with MTP speculative decoding"
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  served_model_name: Qwen/Qwen3.8-Flash-Next-FP8
+
+  # Dual DGX Spark: TP2 is the minimum validated FP8 topology upstream.
+  tensor_parallel: 2
+  gpu_memory_utilization: 0.83
+
+  # Start conservatively on 128 GB unified-memory systems. The checkpoint is
+  # native at 262144 tokens; raise this only after measuring memory headroom.
+  max_model_len: 262144
+  max_num_seqs: 1
+  max_num_batched_tokens: 8192
+
+  tool_call_parser: qwen3_xml
+  reasoning_parser: qwen3
+  speculative_config: '{"method":"mtp","num_speculative_tokens":3}'
+
+command: |
+  vllm serve {model} \
+    --host {host} \
+    --port {port} \
+    --served-model-name {served_model_name} \
+    --tensor-parallel-size {tensor_parallel} \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --max-model-len {max_model_len} \
+    --max-num-seqs {max_num_seqs} \
+    --max-num-batched-tokens {max_num_batched_tokens} \
+    --enable-prefix-caching \
+    --no-enable-flashinfer-autotune \
+    -cc.mode none \
+    -cc.cudagraph_mode full_decode_only \
+    --enable-auto-tool-choice \
+    --tool-call-parser {tool_call_parser} \
+    --reasoning-parser {reasoning_parser} \
+    --speculative-config '{speculative_config}'
