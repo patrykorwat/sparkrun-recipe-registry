@@ -1,5 +1,4 @@
 recipe_version: "3"
-name: basal-omni-1.0-ultra-FP8
 description: vLLM serving Remek/basal-omni-1.0-ultra-FP8 (Gemma 4 31B, FP8) on one DGX Spark (GB10)
 
 # HuggingFace model to download (optional, for --download-model)
@@ -48,7 +47,7 @@ command: |
     --served-model-name {served_model_name} \
     --trust-remote-code \
     --language-model-only \
-    --limit-mm-per-prompt '{{"image": 0, "audio": 0}}' \
+    --limit-mm-per-prompt '{"image": 0, "audio": 0}' \
     --async-scheduling \
     --tensor-parallel-size {tensor_parallel} \
     --gpu-memory-utilization {gpu_memory_utilization} \
