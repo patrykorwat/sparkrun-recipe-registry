@@ -23,17 +23,19 @@ defaults:
   # not this checkpoint.
   tensor_parallel: 1
 
-  # 0.83 * 128 GB unified ~= 106 GB budget: 33 GB weights, rest for KV cache.
-  # Raise to 0.9 only if the KV cache comes back too small for your states.
-  gpu_memory_utilization: 0.83
+  # 0.55 is the validated value for GB10 unified memory: 0.83 and 0.65 both
+  # hit NVRM NV_ERR_NO_MEMORY during KV/graph allocation here and the kernel
+  # OOM killed collateral processes. Budget ~=67 GB: 33 GB weights + ~30 GB KV
+  # (~30k tokens bf16, ~2 states of 16k) with headroom for the OS.
+  gpu_memory_utilization: 0.55
 
   # 16384 is the length validated upstream for this checkpoint.
-  # At 0.83 the KV budget (~55-60 GB after weights/graphs) holds ~4 states of
-  # 16384 tokens in bf16, so fp8 KV cache is not needed; keep KV in bf16 to
-  # stay bit-close to the calibration the shipped thresholds were fitted on.
+  # ~30 GB KV holds ~2 states of 16k tokens in bf16; keep KV in bf16 to stay
+  # bit-close to the calibration the shipped thresholds were fitted on.
   max_model_len: 16384
   max_num_seqs: 16
-  max_num_batched_tokens: 8192
+  # 4096: profiling spike at 8192 contributed to the OOMs above; 4096 profiles clean.
+  max_num_batched_tokens: 4096
 
 # Environment variables
 env:
