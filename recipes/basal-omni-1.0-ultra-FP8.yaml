@@ -1,0 +1,54 @@
+recipe_version: "3"
+name: basal-omni-1.0-ultra-FP8
+description: vLLM serving Remek/basal-omni-1.0-ultra-FP8 (Gemma 4 31B, FP8) on one DGX Spark (GB10)
+
+# HuggingFace model to download (optional, for --download-model)
+# Gemma-derived checkpoint: agree on the model card and export HF_TOKEN
+# (or run `hf auth login`) before starting. Text-only checkpoint —
+# images ("media") need the bf16 model, not this recipe.
+model: Remek/basal-omni-1.0-ultra-FP8
+
+# Container image to use
+container: vllm-node
+
+# Single Spark: no mods, no cluster
+mods: []
+
+defaults:
+  port: 8000
+  host: 0.0.0.0
+  served_model_name: Remek/basal-omni-1.0-ultra-FP8
+
+  # One GB10 is enough: FP8 weights take 33 GB, so TP1 fits with room for
+  # long states. The upstream min topology (TP2) applies to the bf16 model,
+  # not this checkpoint.
+  tensor_parallel: 1
+
+  # 0.83 * 128 GB unified ~= 106 GB budget: 33 GB weights, rest for KV cache.
+  # Raise to 0.9 only if the KV cache comes back too small for your states.
+  gpu_memory_utilization: 0.83
+
+  # 16384 is the length validated upstream for this checkpoint.
+  max_model_len: 16384
+  max_num_seqs: 16
+  max_num_batched_tokens: 8192
+
+# Environment variables
+env:
+  # HF_TOKEN must be provided by the host environment (gated Gemma checkpoint).
+  HF_HUB_DISABLE_XET: "1"
+
+command: |
+  vllm serve {model} \
+    --host {host} \
+    --port {port} \
+    --served-model-name {served_model_name} \
+    --trust-remote-code \
+    --tensor-parallel-size {tensor_parallel} \
+    --gpu-memory-utilization {gpu_memory_utilization} \
+    --max-model-len {max_model_len} \
+    --max-num-seqs {max_num_seqs} \
+    --max-num-batched-tokens {max_num_batched_tokens} \
+    --enable-prefix-caching \
+    --no-enable-flashinfer-autotune \
+    -cc.cudagraph_mode full_decode_only
